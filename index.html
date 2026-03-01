@@ -83,6 +83,13 @@
   .btn-enviar:hover:not(:disabled){background:#89b8fa;transform:translateY(-1px)}
   .btn-enviar:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
+  /* MICRÓFONO */
+  .btn-mic{background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}
+  .btn-mic:hover{border-color:var(--accent2);color:var(--accent2)}
+  .btn-mic.grabando{border-color:#f87171;color:#f87171;background:rgba(248,113,113,.1);animation:pulsoMic 1s infinite}
+  @keyframes pulsoMic{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.4)}50%{box-shadow:0 0 0 6px rgba(248,113,113,0)}}
+  .transcribiendo{font-size:.72rem;color:var(--text3);font-style:italic;padding:0 1.25rem .5rem}
+
   /* LOADING */
   .loading-dots{display:inline-flex;gap:4px;align-items:center;padding:.5rem 0}
   .loading-dots span{width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:bounce 1.2s infinite ease-in-out}
@@ -169,6 +176,9 @@
     <textarea id="strategy-input" placeholder="Describe cómo abordarías este ejercicio. No hace falta que calcules todavía, explica el método que usarías…" rows="3"></textarea>
     <div class="input-actions">
       <span class="input-hint">⏎ Shift+Enter para nueva línea</span>
+      <button class="btn-mic" id="btn-mic" title="Hablar">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+      </button>
       <button class="btn-enviar" id="btn-enviar">
         Enviar
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
@@ -650,6 +660,69 @@ document.getElementById('btn-nuevo').addEventListener('click', cargarEjercicio);
 document.getElementById('strategy-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarEstrategia(); }
 });
+
+
+// ── RECONOCIMIENTO DE VOZ ────────────────────────────────
+const btnMic = document.getElementById('btn-mic');
+let reconocimiento = null;
+let grabando = false;
+
+// Añadir elemento para feedback de transcripción
+const transcDiv = document.createElement('div');
+transcDiv.className = 'transcribiendo';
+document.querySelector('.input-section').appendChild(transcDiv);
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  reconocimiento = new SR();
+  reconocimiento.lang = 'es-ES';
+  reconocimiento.continuous = false;
+  reconocimiento.interimResults = true;
+
+  reconocimiento.onstart = () => {
+    grabando = true;
+    btnMic.classList.add('grabando');
+    btnMic.title = 'Detener';
+    transcDiv.textContent = 'Escuchando…';
+  };
+
+  reconocimiento.onresult = (e) => {
+    const textarea = document.getElementById('strategy-input');
+    let interino = '';
+    let final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interino += e.results[i][0].transcript;
+    }
+    if (final) textarea.value = (textarea.value + ' ' + final).trimStart();
+    transcDiv.textContent = interino ? `Escuchando: "${interino}"` : 'Procesando…';
+  };
+
+  reconocimiento.onend = () => {
+    grabando = false;
+    btnMic.classList.remove('grabando');
+    btnMic.title = 'Hablar';
+    transcDiv.textContent = '';
+  };
+
+  reconocimiento.onerror = (e) => {
+    grabando = false;
+    btnMic.classList.remove('grabando');
+    transcDiv.textContent = e.error === 'not-allowed'
+      ? 'Permiso de micrófono denegado'
+      : 'Error de reconocimiento de voz';
+    setTimeout(() => { transcDiv.textContent = ''; }, 3000);
+  };
+
+  btnMic.addEventListener('click', () => {
+    if (grabando) reconocimiento.stop();
+    else reconocimiento.start();
+  });
+} else {
+  btnMic.title = 'Tu navegador no soporta reconocimiento de voz (usa Chrome)';
+  btnMic.style.opacity = '0.3';
+  btnMic.style.cursor = 'not-allowed';
+}
 
 cargarEjercicio();
 </script>
