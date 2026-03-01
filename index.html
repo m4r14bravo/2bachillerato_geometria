@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometría PAU — Tutor Inteligente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false})"></script>
+<style>
+  :root {
+    --bg:#0f1117; --surface:#181c27; --surface2:#1e2333; --border:#32395a;
+    --accent:#6ba3f8; --accent2:#9d7ffc; --correct:#4ade9e; --warn:#fbbf24;
+    --text:#eceef5; --text2:#a8b4d0; --text3:#6b7a9e;
+    --font-serif:'DM Serif Display',Georgia,serif;
+    --font-sans:'DM Sans',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+    --radius:12px; --radius-sm:8px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:16px;scroll-behavior:smooth}
+  body{font-family:var(--font-sans);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;z-index:0;
+    background:radial-gradient(ellipse 80% 50% at 20% 10%,rgba(107,163,248,.07) 0%,transparent 60%),
+               radial-gradient(ellipse 60% 40% at 80% 90%,rgba(157,127,252,.06) 0%,transparent 60%);
+    pointer-events:none}
+  .app{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 1.5rem 4rem}
+
+  /* HEADER */
+  header{padding:2.5rem 0 2rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--border);margin-bottom:2rem}
+  .header-title h1{font-family:var(--font-serif);font-size:2rem;font-weight:400;letter-spacing:-.02em;line-height:1.1;
+    background:linear-gradient(135deg,var(--text) 0%,var(--accent) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .header-title p{font-size:.85rem;color:var(--text2);margin-top:.3rem;font-weight:300}
+  .stats-badge{display:flex;gap:.75rem;flex-shrink:0}
+  .badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:.3rem .8rem;font-size:.75rem;color:var(--text2);font-family:var(--font-mono);white-space:nowrap}
+  .badge span{color:var(--accent);font-weight:500}
+
+  /* PROGRESS */
+  .progress-bar{height:2px;background:var(--border);border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease}
+
+  /* EJERCICIO */
+  .exercise-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.5rem;animation:fadeSlideIn .4s ease}
+  @keyframes fadeSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .exercise-header{padding:1rem 1.25rem;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+  .exercise-meta{display:flex;align-items:center;gap:.75rem}
+  .ex-num{font-family:var(--font-mono);font-size:.7rem;font-weight:500;color:var(--accent);background:rgba(107,163,248,.12);border:1px solid rgba(107,163,248,.25);border-radius:6px;padding:.2rem .5rem}
+  .ex-origen{font-size:.8rem;color:var(--text2);font-weight:500}
+  .ex-tipo{font-size:.75rem;color:var(--text3)}
+  .btn-nuevo{background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);font-size:.8rem;font-family:var(--font-sans);padding:.4rem .9rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+  .btn-nuevo:hover{border-color:var(--accent);color:var(--accent);background:rgba(107,163,248,.06)}
+  .exercise-body{padding:1.5rem 1.25rem}
+  .exercise-enunciado{font-size:.92rem;color:var(--text);line-height:1.9}
+  .exercise-enunciado p{margin-bottom:.6rem}
+  .exercise-enunciado p:last-child{margin-bottom:0}
+  /* KaTeX en tema oscuro */
+  .katex{color:var(--text)!important;font-size:1.05em!important}
+  .katex-display{margin:.4rem 0!important;overflow-x:auto}
+
+  /* CHAT */
+  .chat-area{display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem}
+  .msg{border-radius:var(--radius);padding:1rem 1.25rem;font-size:.88rem;line-height:1.8;animation:fadeSlideIn .3s ease}
+  .msg-alumno{background:rgba(107,163,248,.08);border:1px solid rgba(107,163,248,.2);margin-left:2rem}
+  .msg-alumno::before{content:'Tú';display:block;font-size:.7rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;font-family:var(--font-mono)}
+  .msg-ia{background:var(--surface2);border:1px solid var(--border);margin-right:2rem}
+  .msg-ia::before{content:'Tutora';display:block;font-size:.7rem;font-weight:600;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;font-family:var(--font-mono)}
+  .msg-ia.correcto::before{color:var(--correct)}
+  .msg-ia.correcto{border-color:rgba(74,222,158,.3);background:rgba(74,222,158,.05)}
+
+  /* INPUT */
+  .input-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}
+  .input-section:focus-within{border-color:var(--accent)}
+  .input-label{padding:.75rem 1.25rem 0;font-size:.75rem;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+  textarea{width:100%;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font-sans);font-size:.9rem;line-height:1.6;padding:.6rem 1.25rem .75rem;resize:none;min-height:80px}
+  textarea::placeholder{color:var(--text3)}
+  .input-actions{padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;border-top:1px solid var(--border);background:var(--surface2)}
+  .input-hint{font-size:.75rem;color:var(--text3)}
+  .btn-enviar{background:var(--accent);color:#0b0f1a;border:none;border-radius:var(--radius-sm);padding:.55rem 1.2rem;font-size:.85rem;font-family:var(--font-sans);font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.4rem}
+  .btn-enviar:hover:not(:disabled){background:#89b8fa;transform:translateY(-1px)}
+  .btn-enviar:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+  /* LOADING */
+  .loading-dots{display:inline-flex;gap:4px;align-items:center;padding:.5rem 0}
+  .loading-dots span{width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:bounce 1.2s infinite ease-in-out}
+  .loading-dots span:nth-child(2){animation-delay:.2s}
+  .loading-dots span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+  /* ALERTA */
+  .alert{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:var(--radius-sm);padding:.75rem 1rem;font-size:.82rem;color:var(--warn);margin-top:.75rem;display:none}
+
+  /* SECCIÓN ELECCIÓN */
+  .choice-section{margin-top:1.5rem;background:var(--surface);border:1px solid rgba(74,222,158,.3);border-radius:var(--radius);padding:1.25rem;animation:fadeSlideIn .4s ease}
+  .choice-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem}
+  .choice-check{font-size:1rem;color:var(--correct)}
+  .choice-title{font-size:.85rem;font-weight:600;color:var(--correct)}
+  .choice-desc{font-size:.8rem;color:var(--text2);margin-bottom:1rem}
+  .choice-buttons{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+  .btn-choice{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;cursor:pointer;text-align:left;transition:all .2s;display:flex;flex-direction:column;gap:.15rem}
+  .btn-choice:hover{transform:translateY(-2px)}
+  .btn-choice-photo:hover{border-color:rgba(74,222,158,.5);background:rgba(74,222,158,.06)}
+  .btn-choice-next:hover{border-color:rgba(107,163,248,.5);background:rgba(107,163,248,.06)}
+  .choice-icon{font-size:1.2rem;margin-bottom:.25rem;display:block}
+  .choice-label{font-size:.85rem;font-weight:600;color:var(--text);font-family:var(--font-sans)}
+  .choice-sub{font-size:.74rem;color:var(--text2);font-family:var(--font-sans);line-height:1.3}
+
+  /* UPLOAD */
+  .upload-section{margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1.1rem;animation:fadeSlideIn .3s ease}
+  .upload-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+  .upload-title{font-size:.78rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+  .btn-add-photo{background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);font-size:.78rem;font-family:var(--font-sans);padding:.3rem .7rem;cursor:pointer;transition:all .2s}
+  .btn-add-photo:hover{border-color:var(--correct);color:var(--correct)}
+  #fileInput{display:none}
+  .photos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.6rem;margin-bottom:1rem}
+  .photos-grid:empty{margin-bottom:0}
+  .photo-thumb{position:relative;border-radius:var(--radius-sm);overflow:hidden;aspect-ratio:4/3;border:1px solid var(--border);background:var(--surface2)}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .remove-photo{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.75);border:none;border-radius:50%;color:#fff;font-size:.65rem;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .btn-corregir{width:100%;background:var(--correct);color:#0b0f1a;border:none;border-radius:var(--radius-sm);padding:.65rem 1.1rem;font-size:.85rem;font-family:var(--font-sans);font-weight:700;cursor:pointer;transition:all .2s;display:none}
+  .btn-corregir:hover:not(:disabled){background:#2fd48a}
+  .btn-corregir:disabled{opacity:.5;cursor:not-allowed}
+
+  @media(max-width:600px){
+    header{flex-direction:column;align-items:flex-start}
+    .msg-alumno{margin-left:0}
+    .msg-ia{margin-right:0}
+    header h1{font-size:1.5rem}
+    .choice-buttons{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-title">
+      <h1>Geometría PAU</h1>
+      <p>Tutor inteligente · 2º Bachillerato · Extremadura</p>
+    </div>
+    <div class="stats-badge">
+      <div class="badge">Ejercicios: <span id="stat-hechos">0</span>/50</div>
+      <div class="badge">Hoy: <span id="stat-peticiones">—</span>/300</div>
+    </div>
+  </header>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+  <div class="exercise-card">
+    <div class="exercise-header">
+      <div class="exercise-meta">
+        <span class="ex-num" id="ex-num">#—</span>
+        <span class="ex-origen" id="ex-origen">Cargando…</span>
+        <span class="ex-tipo" id="ex-tipo"></span>
+      </div>
+      <button class="btn-nuevo" id="btn-nuevo">Otro ejercicio →</button>
+    </div>
+    <div class="exercise-body">
+      <div class="exercise-enunciado" id="ex-enunciado"></div>
+    </div>
+  </div>
+
+  <div class="chat-area" id="chat-area"></div>
+
+  <div class="input-section">
+    <div class="input-label">Tu estrategia de resolución</div>
+    <textarea id="strategy-input" placeholder="Describe cómo abordarías este ejercicio. No hace falta que calcules todavía, explica el método que usarías…" rows="3"></textarea>
+    <div class="input-actions">
+      <span class="input-hint">⏎ Shift+Enter para nueva línea</span>
+      <button class="btn-enviar" id="btn-enviar">
+        Enviar
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="alert" id="alert-limite">⚠️ Se ha alcanzado el límite de consultas de hoy. Vuelve mañana.</div>
+
+  <div class="choice-section" id="choice-section" style="display:none">
+    <div class="choice-header">
+      <span class="choice-check">✓</span>
+      <span class="choice-title">Estrategia correcta</span>
+    </div>
+    <p class="choice-desc">¿Qué quieres hacer ahora?</p>
+    <div class="choice-buttons">
+      <button class="btn-choice btn-choice-photo" id="btn-show-upload">
+        <span class="choice-icon">📷</span>
+        <span class="choice-label">Subir resolución</span>
+        <span class="choice-sub">Te corrijo el desarrollo escrito</span>
+      </button>
+      <button class="btn-choice btn-choice-next" id="btn-siguiente">
+        <span class="choice-icon">→</span>
+        <span class="choice-label">Nuevo ejercicio</span>
+        <span class="choice-sub">Seguir entrenando estrategia</span>
+      </button>
+    </div>
+    <div class="upload-section" id="upload-section" style="display:none">
+      <div class="upload-header">
+        <span class="upload-title">Fotos del desarrollo</span>
+        <button class="btn-add-photo" id="btn-add-photo">+ Añadir foto</button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*">
+      <div class="photos-grid" id="photos-grid"></div>
+      <button class="btn-corregir" id="btn-corregir">Enviar para corrección →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = "https://ejerciciospau.m4r14bravo.workers.dev/";
+
+function rerender(el) {
+  if (window.renderMathInElement) {
+    renderMathInElement(el, {
+      delimiters: [{left:'$$',right:'$$',display:true},{left:'\\(',right:'\\)',display:false}],
+      throwOnError: false
+    });
+  }
+}
+
+const EJERCICIOS = [
+  // ── BLOQUE A — PAU Extremadura reales ────────────────────────────────
+  { id:1, origen:"Extremadura Ext. 2025", tipo:"Vectores", enunciado:[
+    "Dados los puntos \\(A = (1, 2, 3)\\), \\(B = (2, 3, 4)\\), \\(C = (3, 4, 3)\\).",
+    "a) ¿Están \\(A\\), \\(B\\) y \\(C\\) alineados?",
+    "b) Halla un vector ortogonal a \\(\\vec{AB}\\) y \\(\\vec{AC}\\) de módulo \\(2\\).",
+    "c) Halla el punto simétrico de \\(A\\) respecto de \\(B\\)."
+  ]},
+  { id:2, origen:"Extremadura Ext. 2025", tipo:"Recta y plano", enunciado:[
+    "Dada la recta \\(s\\colon \\dfrac{x}{-4} = \\dfrac{y-1}{3} = \\dfrac{z+1}{0}\\), el plano \\(\\pi\\colon x - 2y + 3z - 6 = 0\\) y el punto \\(P(1, -1, 0)\\).",
+    "a) Plano perpendicular a \\(s\\) que pase por \\(P\\).",
+    "b) Distancia de \\(P\\) a la recta \\(s\\).",
+    "c) Ángulo entre \\(s\\) y \\(\\pi\\)."
+  ]},
+  { id:3, origen:"Extremadura Ord. 2025", tipo:"Recta y plano", enunciado:[
+    "Sean \\(\\pi\\colon x + y - z = 3\\) y \\(r\\colon \\dfrac{x}{3} = \\dfrac{y-1}{-1} = \\dfrac{z+1}{2}\\).",
+    "a) Comprobar que \\(\\pi\\) y \\(r\\) no se cortan.",
+    "b) Calcular la distancia entre \\(\\pi\\) y \\(r\\).",
+    "c) Plano perpendicular a \\(r\\) que pase por \\((0, 1, -1)\\)."
+  ]},
+  { id:4, origen:"Extremadura Ord. 2025", tipo:"Plano y vectores", enunciado:[
+    "Dados \\(A(1,0,2)\\), \\(B(1,m,6)\\), \\(C(2,1,4)\\) y \\(D(4,3,2)\\).",
+    "a) Calcular \\(m\\) para que los 4 puntos sean coplanarios.",
+    "b) Ecuación del plano \\(ACD\\).",
+    "c) Para \\(m=2\\): vector \\(\\perp\\) al plano \\(ABC\\) de módulo \\(4\\), y área del triángulo \\(ABC\\)."
+  ]},
+  { id:5, origen:"Extremadura Ext. 2024", tipo:"Vectores", enunciado:[
+    "Dados \\(\\mathbf{u} = (2,1,0)\\), \\(\\mathbf{v} = (5,0,1)\\) y \\(\\mathbf{w} = (a, b, 1)\\).",
+    "a) Hallar \\(a\\) y \\(b\\) para que \\(\\mathbf{u} \\perp \\mathbf{w}\\) y \\(\\{\\mathbf{u}, \\mathbf{v}, \\mathbf{w}\\}\\) sean linealmente dependientes.",
+    "b) Volumen del paralelepípedo de \\(\\mathbf{u}\\), \\(\\mathbf{v}\\) y \\(\\mathbf{z} = (1, 2, 1)\\)."
+  ]},
+  { id:6, origen:"Extremadura Ext. 2024", tipo:"Rectas y ángulos", enunciado:[
+    "Sean \\(r\\colon \\{x = 1-2\\lambda,\\; y = 5+2\\lambda,\\; z = -6\\}\\) y \\(s\\colon \\dfrac{x+1}{1} = \\dfrac{y-1}{a} = \\dfrac{z}{3}\\).",
+    "a) Calcular \\(a\\) para que \\(r\\) y \\(s\\) sean paralelas.",
+    "b) Ángulo entre \\(r\\) y el plano \\(-3x + 4y - 4 = 0\\)."
+  ]},
+  { id:7, origen:"Extremadura Ord. 2024", tipo:"Planos", enunciado:[
+    "Hallar el plano que contiene a \\(r\\colon \\{x - y - 4z + 1 = 0,\\; x - 2z + 1 = 0\\}\\) y es paralelo a:",
+    "\\(s\\colon \\dfrac{x-1}{2} = \\dfrac{y-3}{-1} = \\dfrac{z}{3}\\)."
+  ]},
+  { id:8, origen:"Extremadura Ord. 2024", tipo:"Vectores y triángulo", enunciado:[
+    "Dados \\(A(1,2,1)\\), \\(B(0,3,1)\\) y \\(C(1,0,-1)\\).",
+    "a) Vector unitario ortogonal a \\(\\vec{AB}\\) y \\(\\vec{AC}\\).",
+    "b) Ángulo entre \\(\\vec{AB}\\) y \\(\\vec{AC}\\).",
+    "c) Área del triángulo \\(ABC\\)."
+  ]},
+  { id:9, origen:"Extremadura Ext. 2023", tipo:"Vectores", enunciado:[
+    "Sean \\(\\mathbf{u} = (0,0,2)\\), \\(\\mathbf{v} = (1,1,0)\\), \\(\\mathbf{w} = (2,-1,1)\\).",
+    "a) ¿Son \\(\\mathbf{u}\\), \\(\\mathbf{v}\\) y \\(\\mathbf{w}\\) linealmente independientes?",
+    "b) Área del triángulo formado por \\(\\mathbf{u}\\) y \\(\\mathbf{v}\\).",
+    "c) Vector unitario perpendicular a \\(\\mathbf{v}\\) y \\(\\mathbf{w}\\)."
+  ]},
+  { id:10, origen:"Extremadura Ext. 2023", tipo:"Plano y distancia", enunciado:[
+    "Dados \\(A = (0,0,2)\\), \\(B = (1,1,0)\\) y la recta \\(r\\colon \\{x = 1,\\; y = z\\}\\).",
+    "a) Plano que contiene a \\(r\\) y es paralelo al vector \\(\\vec{AB}\\).",
+    "b) Distancia de \\(A\\) a \\(r\\)."
+  ]},
+  { id:11, origen:"Extremadura Ord. 2023", tipo:"Vectores", enunciado:[
+    "Hallar un vector de módulo \\(5\\) ortogonal a \\(\\mathbf{u} = (1, 2, 0)\\) y \\(\\mathbf{v} = (-1, 0, 1)\\)."
+  ]},
+  { id:12, origen:"Extremadura Ext. 2022", tipo:"Recta y triángulo", enunciado:[
+    "Dados \\(A = (0,0,2)\\), \\(B = (1,1,0)\\) y la recta \\(r\\colon \\{x = 1,\\; y = z\\}\\).",
+    "Calcular \\(P \\in r\\) tal que el triángulo \\(ABP\\) tenga ángulo recto en \\(A\\)."
+  ]},
+  { id:13, origen:"Extremadura Ext. 2022", tipo:"Rectas", enunciado:[
+    "Sean \\(r\\colon \\{x = 2-2y,\\; z = 1-x\\}\\) y \\(s\\colon \\dfrac{x-1}{2} = \\dfrac{y-3}{1} = \\dfrac{z+1}{-2}\\).",
+    "a) Posición relativa de \\(r\\) y \\(s\\).",
+    "b) Distancia entre las dos rectas."
+  ]},
+  { id:14, origen:"Extremadura Ord. 2022", tipo:"Recta y plano", enunciado:[
+    "Dados \\(\\pi\\colon x + 2y - z = 0\\) y \\(r\\colon \\{y - 2x = 1,\\; x - z = 0\\}\\).",
+    "a) Punto de intersección de \\(\\pi\\) y \\(r\\).",
+    "b) Distancia del origen a \\(r\\)."
+  ]},
+  { id:15, origen:"Extremadura Ord. 2022", tipo:"Planos", enunciado:[
+    "Dada \\(r\\colon \\dfrac{x-1}{2} = \\dfrac{y+1}{3} = \\dfrac{z-2}{1}\\).",
+    "a) Plano que pasa por el origen y contiene a \\(r\\).",
+    "b) Plano que pasa por el origen y es perpendicular a \\(r\\)."
+  ]},
+  { id:16, origen:"Extremadura Ext. 2021", tipo:"Rectas", enunciado:[
+    "Sean \\(r\\colon \\{x = 1+\\lambda,\\; y = 2-3\\lambda,\\; z = 1\\}\\) y \\(s\\colon \\{x + y + z = 2,\\; x - y - z = 4\\}\\).",
+    "a) Plano que contiene a \\(r\\) y es paralelo a \\(s\\).",
+    "b) Distancia entre \\(r\\) y \\(s\\)."
+  ]},
+  { id:17, origen:"Extremadura Ext. 2021", tipo:"Vectores", enunciado:[
+    "Calcular un vector de módulo \\(3\\) perpendicular a \\(\\mathbf{u} = (1,1,-1)\\) y \\(\\mathbf{v} = (2,1,0)\\)."
+  ]},
+  { id:18, origen:"Extremadura Ord. 2021", tipo:"Plano y recta", enunciado:[
+    "Dados \\(\\pi\\colon kx + y - z = 0\\) y \\(r\\colon \\dfrac{x-4}{2} = \\dfrac{y-2}{1} = \\dfrac{z+2}{-1}\\).",
+    "a) Determinar \\(k\\) para que \\(\\pi\\) contenga a \\(r\\).",
+    "b) Para \\(k = 0\\), ángulo entre \\(\\pi\\) y \\(r\\)."
+  ]},
+  { id:19, origen:"Extremadura Ord. 2021", tipo:"Planos", enunciado:[
+    "Sea \\(\\pi\\colon x + y + z = 1\\). Encontrar un plano paralelo a \\(\\pi\\) tal que el triángulo formado por sus cortes con los ejes tenga área \\(2\\sqrt{3}\\)."
+  ]},
+  { id:20, origen:"Extremadura Ext. 2020", tipo:"Vectores", enunciado:[
+    "Sean \\(\\mathbf{u} = (4,3,\\alpha)\\), \\(\\mathbf{v} = (\\alpha,1,0)\\) y \\(\\mathbf{w} = (2\\alpha,1,\\alpha)\\).",
+    "a) Valores de \\(\\alpha\\) para que \\(\\{\\mathbf{u}, \\mathbf{v}, \\mathbf{w}\\}\\) sean L.I.",
+    "b) Para \\(\\alpha = 1\\), expresar \\(\\mathbf{w}\\) como combinación lineal de \\(\\mathbf{u}\\) y \\(\\mathbf{v}\\)."
+  ]},
+  { id:21, origen:"Extremadura Ext. 2020", tipo:"Planos", enunciado:[
+    "Dados \\(\\pi_1\\) determinado por \\((0,1,1)\\), \\((2,0,2)\\) y \\((1,2,6)\\), y \\(\\pi_2\\colon x - y + z = 3\\).",
+    "Calcular una recta paralela a ambos planos y no contenida en ninguno."
+  ]},
+  { id:22, origen:"Extremadura Ord. 2020", tipo:"Recta y plano", enunciado:[
+    "Sean \\(\\pi\\colon 2x + y - z - 2 = 0\\) y \\(r\\colon \\dfrac{x}{3} = \\dfrac{y-2}{-3} = \\dfrac{z-1}{3}\\).",
+    "a) Posición relativa de \\(r\\) respecto de \\(\\pi\\).",
+    "b) Distancia de \\(r\\) a \\(\\pi\\)."
+  ]},
+  { id:23, origen:"Extremadura Ord. 2020", tipo:"Vectores y paralelogramo", enunciado:[
+    "Tres vértices consecutivos de un paralelogramo: \\(A(1,3,-2)\\), \\(B(4,3,1)\\) y \\(C(1,0,1)\\).",
+    "a) Cuarto vértice \\(D\\).",
+    "b) Área del paralelogramo."
+  ]},
+  { id:24, origen:"Extremadura Jul. 2019", tipo:"Rectas", enunciado:[
+    "Sean \\(r\\colon \\{x = 1+\\lambda,\\; y = \\lambda,\\; z = 1\\}\\) y \\(s\\colon \\{x = 1+\\mu,\\; y = 0,\\; z = \\mu\\}\\).",
+    "a) ¿Se cortan, se cruzan o coinciden?",
+    "b) Vectores directores de \\(r\\) y \\(s\\). Área del triángulo que forman."
+  ]},
+  { id:25, origen:"Extremadura Jul. 2019", tipo:"Plano y distancia", enunciado:[
+    "Sean \\(r\\) la recta por \\(A(0,0,-1)\\) y \\(B(0,-2,-1)\\), y \\(s\\) la recta por \\(C(-1,2,0)\\) y \\(D(1,0,-1)\\).",
+    "a) Plano que contiene a \\(s\\) y es paralelo a \\(r\\).",
+    "b) Distancia entre \\(r\\) y \\(s\\)."
+  ]},
+  { id:26, origen:"Extremadura Jun. 2019", tipo:"Plano y coplanaridad", enunciado:[
+    "Sean \\(A(0,0,2)\\), \\(B(2,0,1)\\), \\(C(0,2,1)\\) y \\(D(-2,2,-1)\\).",
+    "a) Ecuación del plano por \\(A\\), \\(B\\) y \\(C\\).",
+    "b) Demostrar que los 4 puntos no son coplanarios.",
+    "c) Área del triángulo \\(BCD\\)."
+  ]},
+  { id:27, origen:"Extremadura Jun. 2019", tipo:"Plano mediatriz", enunciado:[
+    "Dados \\(A(1,0,2)\\) y \\(B(3,-2,-2)\\). Calcular el plano perpendicular a \\(\\overline{AB}\\) que pasa por su punto medio."
+  ]},
+  { id:28, origen:"Extremadura Jul. 2018", tipo:"Recta y área", enunciado:[
+    "Sean \\(A(2,0,1)\\), \\(B(2,0,3)\\) y la recta \\(r\\) con punto \\(C(1,0,2)\\) y vector director \\(\\mathbf{v} = (-1,0,0)\\).",
+    "Determinar los puntos \\(P \\in r\\) tales que el área del triángulo \\(ABP\\) sea \\(2\\)."
+  ]},
+  { id:29, origen:"Extremadura Jul. 2018", tipo:"Rectas", enunciado:[
+    "Sean \\(r\\colon \\dfrac{x-3}{3} = \\dfrac{y-5}{-1} = \\dfrac{z-2}{4}\\) y \\(s\\colon \\{x - y - z = 2,\\; 2x + 2y - z = 4\\}\\).",
+    "a) Posición relativa.",
+    "b) Distancia entre \\(r\\) y \\(s\\)."
+  ]},
+  { id:30, origen:"Extremadura Jun. 2018", tipo:"Recta y plano", enunciado:[
+    "Sean \\(\\pi\\colon y + z = 0\\) y \\(r\\colon \\dfrac{x+1}{1} = \\dfrac{y-1}{-2} = \\dfrac{z-1}{1}\\).",
+    "a) Intersección de \\(\\pi\\) y \\(r\\).",
+    "b) Recta \\(s\\) por \\(P(1,0,0)\\), paralela a \\(\\pi\\) y perpendicular a \\(r\\)."
+  ]},
+  { id:31, origen:"Extremadura Jun. 2018", tipo:"Distancias", enunciado:[
+    "Sea \\(A(1,0,1)\\) y la recta \\(r\\) por \\(B(-1,0,2)\\) con vector director \\(\\mathbf{v} = (-1,1,0)\\).",
+    "a) Distancia de \\(A\\) a \\(r\\).",
+    "b) Área del triángulo \\(A\\), \\(B\\), \\(O(0,0,0)\\)."
+  ]},
+  { id:32, origen:"Extremadura Jul. 2017", tipo:"Planos", enunciado:[
+    "Sean \\(r\\colon \\{x = 0,\\; y = 0\\}\\) y \\(s\\colon \\{x + y = 1,\\; z = 0\\}\\).",
+    "a) Vector director de \\(s\\).",
+    "b) Plano que contiene a \\(r\\) y es paralelo a \\(s\\).",
+    "c) Plano que contiene a \\(r\\) y es perpendicular a \\(s\\)."
+  ]},
+  { id:33, origen:"Extremadura Jul. 2017", tipo:"Recta", enunciado:[
+    "Sean \\(A(1,2,1)\\), \\(B(-2,-1,-3)\\), \\(C(0,1,-1)\\), \\(D(0,3,-1)\\) y \\(r\\) la recta por \\(A\\) y \\(B\\).",
+    "a) Ecuaciones paramétricas de \\(r\\).",
+    "b) Punto \\(P \\in r\\) equidistante de \\(C\\) y \\(D\\)."
+  ]},
+  { id:34, origen:"Extremadura Jun. 2017", tipo:"Vectores", enunciado:[
+    "Sean \\(\\mathbf{e} = (0,1,0)\\), \\(\\mathbf{u} = (3,-2,2)\\) y \\(\\mathbf{v} = (0,1,1)\\).",
+    "a) Calcular \\(\\mathbf{e} \\times \\mathbf{u}\\).",
+    "b) Ángulo entre \\(\\mathbf{u}\\) y \\(\\mathbf{v}\\).",
+    "c) Demostrar que \\(\\{\\mathbf{e}, \\mathbf{u}, \\mathbf{v}\\}\\) son L.I."
+  ]},
+  { id:35, origen:"Extremadura Jun. 2017", tipo:"Rectas paralelas", enunciado:[
+    "Sean \\(r\\colon \\{3x + 2y = 0,\\; x - 2z = -8\\}\\) y \\(s\\colon \\dfrac{x+1}{-2} = \\dfrac{y-3}{a} = \\dfrac{z-1}{-1}\\).",
+    "a) Valor de \\(a\\) para que \\(r\\) y \\(s\\) sean paralelas.",
+    "b) Distancia entre \\(r\\) y \\(s\\)."
+  ]},
+  // ── BLOQUE B — Otras CCAA ────────────────────────────────────────────
+  { id:36, origen:"Murcia Ord. 2024", tipo:"Recta y plano", enunciado:[
+    "\\(\\pi\\colon x + y + z = -1\\) y \\(r\\colon \\dfrac{x}{1} = \\dfrac{y-1}{-1} = \\dfrac{z}{0}\\).",
+    "a) Comprobar que son paralelos.",
+    "b) Distancia de \\(r\\) a \\(\\pi\\).",
+    "c) Plano que contiene a \\(r\\) y es perpendicular a \\(\\pi\\)."
+  ]},
+  { id:37, origen:"Murcia Ext. 2024", tipo:"Planos y recta", enunciado:[
+    "\\(\\pi_1\\colon x + y + z = -3\\), \\(\\pi_2\\colon x + y - z = 3\\) y \\(r\\colon \\dfrac{x-1}{2} = \\dfrac{y+1}{1} = \\dfrac{z}{3}\\).",
+    "a) Comprobar que \\(\\pi_1\\) y \\(\\pi_2\\) se cortan y calcular su ángulo.",
+    "b) Posición relativa de \\(r\\) con \\(\\pi_2\\).",
+    "c) Puntos de \\(r\\) que equidistan de ambos planos."
+  ]},
+  { id:38, origen:"La Rioja Ord. 2025", tipo:"Rectas y simétrico", enunciado:[
+    "a) Hallar \\(m\\) para que \\(r\\colon x = y = z - m\\) y \\(s\\colon \\dfrac{x-1}{2} = \\dfrac{2y}{3} = 2z - 2\\) se corten. Punto de corte.",
+    "b) Sean \\(P(0,2,-1)\\) y \\(Q(2,-2,1)\\). Plano \\(\\pi\\) tal que \\(P\\) y \\(Q\\) sean simétricos respecto a él."
+  ]},
+  { id:39, origen:"La Rioja Ord. 2024", tipo:"Rectas perpendiculares", enunciado:[
+    "Dada \\(r\\colon x - 2 = y + 1 = -z\\), calcular la recta \\(s\\) que corta a \\(r\\) perpendicularmente y pasa por \\(Q(2,-2,1)\\)."
+  ]},
+  { id:40, origen:"La Rioja Ext. 2024", tipo:"Planos", enunciado:[
+    "Dado \\(P(2,-1,3)\\), hallar los planos que pasan por \\(P\\) y son:",
+    "a) Paralelo a \\(\\pi\\colon 4x + 3y - 2z + 4 = 0\\).",
+    "b) Perpendicular a \\(r\\colon \\dfrac{x-3}{3} = \\dfrac{y}{2} = \\dfrac{z+2}{-4}\\)."
+  ]},
+  { id:41, origen:"Castilla y León Ext. 2024", tipo:"Plano", enunciado:[
+    "Determinar el plano que pasa por \\(P(1,1,2)\\) y \\(Q(3,-1,1)\\) y es paralelo a \\(r\\colon x - 1 = y = z\\)."
+  ]},
+  { id:42, origen:"Castilla y León Ord. 2024", tipo:"Simétrico respecto a recta", enunciado:[
+    "Hallar el punto simétrico de \\(P(1, 0, -1)\\) respecto de \\(r\\colon \\dfrac{x-1}{1} = \\dfrac{y}{2} = \\dfrac{z}{2}\\)."
+  ]},
+  { id:43, origen:"Galicia Ord. 2024", tipo:"Recta contenida en plano", enunciado:[
+    "a) Calcular \\(b\\) y \\(c\\) para que \\(r\\colon \\dfrac{x-2}{3} = \\dfrac{y-c}{2} = \\dfrac{z-3}{4}\\) esté contenida en \\(\\pi\\colon 4x + 2y + bz = 2\\).",
+    "b) Distancia de \\(P(1,3,1)\\) al plano \\(\\pi'\\colon 4x + 2y - 4z = 2\\)."
+  ]},
+  { id:44, origen:"Cantabria Ext. 2025", tipo:"Recta y plano", enunciado:[
+    "Sea \\(r\\colon \\{x - 2z - 2 = 0,\\; y + z = 3\\}\\) y \\(P(-3, 2, 2)\\).",
+    "a) Expresar \\(r\\) en forma continua.",
+    "b) Plano perpendicular a \\(r\\) que pase por \\(P\\).",
+    "c) Distancia de \\(P\\) a \\(r\\)."
+  ]},
+  { id:45, origen:"Cantabria Ord. 2025", tipo:"Recta y plano", enunciado:[
+    "Sea \\(r\\colon \\{2x - y = 3,\\; y - 2z = 1\\}\\) y \\(P(1,1,1)\\).",
+    "a) Puntos de \\(r\\) a distancia \\(\\sqrt{14}\\) de \\(P\\).",
+    "b) Plano que contiene a \\(r\\) y a \\(P\\).",
+    "c) Distancia de \\(P\\) a \\(r\\)."
+  ]},
+  { id:46, origen:"Galicia Ext. 2024", tipo:"Recta y plano", enunciado:[
+    "Sean \\(A(-1,3,-5)\\) y \\(B(1,2,-5)\\). Sea \\(\\pi\\) el plano por \\(C(5,0,1)\\) perpendicular a la recta \\(r\\) por \\(A\\) y \\(B\\).",
+    "Hallar las ecuaciones de \\(r\\), la ecuación de \\(\\pi\\) y el punto de corte de \\(r\\) con \\(\\pi\\)."
+  ]},
+  { id:47, origen:"Murcia Ext. 2025", tipo:"Plano que contiene recta", enunciado:[
+    "Sea \\(\\pi\\colon 2x + y + az = b\\) y \\(r\\colon \\{x + y + z = 1,\\; -x - 2y + z = 0\\}\\).",
+    "a) Hallar \\(a\\) y \\(b\\) para que \\(\\pi\\) contenga a \\(r\\).",
+    "b) ¿Para qué valores corta \\(\\pi\\) a \\(r\\)? Para \\(a = 0\\), \\(b = 7\\), hallar punto de corte."
+  ]},
+  { id:48, origen:"Galicia Ext. 2025", tipo:"Planos y distancia", enunciado:[
+    "Sean \\(\\pi\\colon 2x + 3y + z + 1 = 0\\), \\(\\pi'\\colon x + z - 1 = 0\\), \\(A(2,1,0)\\) y \\(B(-1,-2,3)\\).",
+    "a) Distancia de \\(A\\) al plano paralelo a \\(\\pi\\) que pasa por \\(B\\).",
+    "b) Recta intersección de \\(\\pi\\) y \\(\\pi'\\) en forma paramétrica."
+  ]},
+  { id:49, origen:"La Rioja Ext. 2025", tipo:"Distancia recta-plano", enunciado:[
+    "Calcular la distancia de \\(r\\colon \\dfrac{x-3}{-1} = \\dfrac{y-1}{2} = \\dfrac{z+2}{5}\\) al plano \\(\\pi\\colon -x - 3y + z + 4 = 0\\)."
+  ]},
+  { id:50, origen:"Castilla y León Ext. 2025", tipo:"Recta y plano", enunciado:[
+    "Sean \\(\\pi\\colon 5x + my + z = 2\\) y \\(r\\colon (x,y,z) = (1,1,0) + t(-1,-1,2)\\).",
+    "a) Posición relativa de \\(r\\) y \\(\\pi\\) según \\(m\\).",
+    "b) Para \\(m = 1\\), plano \\(\\pi'\\) que contiene a \\(r\\) y es perpendicular a \\(\\pi\\)."
+  ]}
+];
+
+// ── ESTADO ────────────────────────────────────────────────────
+let ejercicioActual = null, historial = [], hechos = new Set();
+let estrategiaCorrecta = false, fotos = [], peticionesHoy = 0;
+
+function elegirEjercicio() {
+  if (hechos.size >= EJERCICIOS.length) hechos.clear();
+  const d = EJERCICIOS.filter(e => !hechos.has(e.id));
+  return d[Math.floor(Math.random() * d.length)];
+}
+
+function renderEjercicio(ej) {
+  document.getElementById('ex-num').textContent    = `#${ej.id}`;
+  document.getElementById('ex-origen').textContent = ej.origen;
+  document.getElementById('ex-tipo').textContent   = ej.tipo;
+  const cont = document.getElementById('ex-enunciado');
+  cont.innerHTML = ej.enunciado.map(l => `<p>${l}</p>`).join('');
+  rerender(cont);
+}
+
+function addMsg(rol, texto, esCorrecta = false) {
+  const chat = document.getElementById('chat-area');
+  const div  = document.createElement('div');
+  div.className = `msg msg-${rol}${esCorrecta ? ' correcto' : ''}`;
+  div.innerHTML = texto.replace(/\n/g, '<br>');
+  chat.appendChild(div);
+  if (rol === 'ia') rerender(div);
+  div.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function addLoading() {
+  const d = document.createElement('div');
+  d.className = 'msg msg-ia'; d.id = 'loading-msg';
+  d.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('chat-area').appendChild(d);
+  d.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function removeLoading() { document.getElementById('loading-msg')?.remove(); }
+
+function updateStats() {
+  document.getElementById('stat-hechos').textContent     = hechos.size;
+  document.getElementById('progress-fill').style.width  = `${(hechos.size/EJERCICIOS.length)*100}%`;
+  document.getElementById('stat-peticiones').textContent = peticionesHoy || '—';
+}
+
+function parsearRespuesta(texto) {
+  const m = texto.match(/\[ESTRATEGIA:(CORRECTA|PARCIAL|INCORRECTA)\]\s*$/);
+  return { estado: m?.[1] ?? null, textoLimpio: texto.replace(/\[ESTRATEGIA:.*?\]\s*$/, '').trimEnd() };
+}
+
+function cargarEjercicio() {
+  ejercicioActual = elegirEjercicio();
+  hechos.add(ejercicioActual.id);
+  historial = []; estrategiaCorrecta = false; fotos = [];
+  renderEjercicio(ejercicioActual);
+  document.getElementById('chat-area').innerHTML = '';
+  document.getElementById('strategy-input').value = '';
+  document.getElementById('btn-enviar').disabled = false;
+  document.getElementById('alert-limite').style.display = 'none';
+  document.getElementById('choice-section').style.display = 'none';
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('photos-grid').innerHTML = '';
+  document.getElementById('btn-corregir').style.display = 'none';
+  updateStats();
+}
+
+async function llamarWorker(mensajes) {
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ messages: mensajes })
+    });
+    if (res.status === 429) return { error:'limite_diario' };
+    if (!res.ok)            return { error:'api_error' };
+    return await res.json();
+  } catch { return { error:'red' }; }
+}
+
+async function enviarEstrategia() {
+  const input = document.getElementById('strategy-input');
+  const texto = input.value.trim();
+  if (!texto) return;
+  input.value = '';
+  document.getElementById('btn-enviar').disabled = true;
+  addMsg('alumno', texto);
+
+  let contenido = texto;
+  if (historial.length === 0) {
+    const enunciado = ejercicioActual.enunciado.join('\n');
+    contenido = `EJERCICIO (${ejercicioActual.origen} — ${ejercicioActual.tipo}):\n${enunciado}\n\nESTRATEGIA DEL ALUMNO:\n${texto}`;
+  }
+  historial.push({ role:'user', content: contenido });
+  addLoading();
+
+  const data = await llamarWorker(historial);
+  removeLoading();
+
+  if (data.error) {
+    if (data.error === 'limite_diario') document.getElementById('alert-limite').style.display = 'block';
+    else addMsg('ia', '⚠️ Error al conectar. Inténtalo de nuevo.');
+    document.getElementById('btn-enviar').disabled = false;
+    return;
+  }
+
+  historial.push({ role:'assistant', content: data.respuesta });
+  if (data.peticiones_hoy) peticionesHoy = data.peticiones_hoy;
+  updateStats();
+
+  const { estado, textoLimpio } = parsearRespuesta(data.respuesta);
+  addMsg('ia', textoLimpio, estado === 'CORRECTA');
+
+  if (estado === 'CORRECTA' && !estrategiaCorrecta) {
+    estrategiaCorrecta = true;
+    setTimeout(() => {
+      document.getElementById('choice-section').style.display = 'block';
+      document.getElementById('choice-section').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }, 500);
+  }
+  document.getElementById('btn-enviar').disabled = false;
+}
+
+document.getElementById('btn-show-upload').addEventListener('click', function() {
+  document.getElementById('upload-section').style.display = 'block';
+  this.style.opacity = '0.5'; this.style.cursor = 'default'; this.disabled = true;
+  document.getElementById('upload-section').scrollIntoView({ behavior:'smooth', block:'nearest' });
+});
+document.getElementById('btn-siguiente').addEventListener('click', cargarEjercicio);
+document.getElementById('btn-add-photo').addEventListener('click', () => document.getElementById('fileInput').click());
+
+document.getElementById('fileInput').addEventListener('change', function() {
+  Array.from(this.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      fotos.push({ base64: e.target.result.split(',')[1], mimeType: file.type || 'image/jpeg' });
+      renderFotos();
+    };
+    reader.readAsDataURL(file);
+  });
+  this.value = '';
+});
+
+function renderFotos() {
+  const grid = document.getElementById('photos-grid');
+  grid.innerHTML = '';
+  fotos.forEach((f, i) => {
+    const t = document.createElement('div');
+    t.className = 'photo-thumb';
+    t.innerHTML = `<img src="data:${f.mimeType};base64,${f.base64}" alt="Foto ${i+1}"><button class="remove-photo" data-i="${i}">✕</button>`;
+    grid.appendChild(t);
+  });
+  document.getElementById('btn-corregir').style.display = fotos.length > 0 ? 'block' : 'none';
+  grid.querySelectorAll('.remove-photo').forEach(btn => btn.addEventListener('click', function() {
+    fotos.splice(parseInt(this.dataset.i), 1); renderFotos();
+  }));
+}
+
+document.getElementById('btn-corregir').addEventListener('click', async function() {
+  if (!fotos.length) return;
+  this.disabled = true;
+  const n = fotos.length;
+  addMsg('alumno', `📷 ${n === 1 ? 'Foto enviada' : `${n} fotos enviadas`} para corrección`);
+  addLoading();
+  const contenidoFotos = [
+    ...fotos.map(f => ({ type:'image', source:{ type:'base64', media_type:f.mimeType, data:f.base64 }})),
+    { type:'text', text: n === 1
+        ? 'Te mando una foto de mi desarrollo. ¿Puedes revisarlo y señalarme los errores si los hay?'
+        : `Te mando ${n} fotos con mi desarrollo completo. ¿Puedes revisarlo todo y señalarme los errores?` }
+  ];
+  const msg = { role:'user', content: contenidoFotos };
+  const data = await llamarWorker([...historial, msg]);
+  removeLoading();
+  if (data.error) { addMsg('ia', '⚠️ Error al analizar las fotos. Inténtalo de nuevo.'); }
+  else {
+    historial.push(msg, { role:'assistant', content: data.respuesta });
+    const { textoLimpio } = parsearRespuesta(data.respuesta);
+    addMsg('ia', textoLimpio);
+    if (data.peticiones_hoy) peticionesHoy = data.peticiones_hoy;
+    updateStats();
+  }
+  this.disabled = false;
+});
+
+document.getElementById('btn-enviar').addEventListener('click', enviarEstrategia);
+document.getElementById('btn-nuevo').addEventListener('click', cargarEjercicio);
+document.getElementById('strategy-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarEstrategia(); }
+});
+
+cargarEjercicio();
+</script>
+</body>
+</html>
